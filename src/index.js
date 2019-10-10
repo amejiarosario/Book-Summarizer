@@ -21,12 +21,16 @@ function tokenize(word) {
   return word.toLowerCase().trim();
 }
 
-function excludedWords(word) {
-  return excludeByLength(word) && !EXCLUDED_WORDS_MAP[word];
+function excludeWhitespace(word) {
+  return word && word.trim().length > 0;
 }
 
 function excludeByLength(word) {
-  return word && word.length > MIN_WORD_LENGTH;
+  return excludeWhitespace(word) > MIN_WORD_LENGTH;
+}
+
+function excludedWords(word) {
+  return excludeByLength(word) && !EXCLUDED_WORDS_MAP[word];
 }
 
 function getMostRepeatedWords(text) {
@@ -98,7 +102,7 @@ function topKeys(map, top = 10) {
   return sortByFrecuency(map).filter(a => a[1] > 1).slice(0, top);
 }
 
-function findLongestPhrases(text) {
+function findLongestPhrasesOld(text) {
   const phrases = new Map();
 
   const words = text
@@ -109,7 +113,7 @@ function findLongestPhrases(text) {
 
   // console.log({words});
 
-  const grouping = 3;
+  const grouping = 4;
 
   for (let index = grouping; index < words.length; index++) {
     const phrase = words.slice(index - grouping, index).join(' ').trim();
@@ -131,36 +135,111 @@ function findLongestPhrases(text) {
   return phrases;
 }
 
+function indexOfAll(text, word) {
+  let count = -1;
+  for (let index = 0; index < text.length; index++) {
+    const newIndex = text.slice(index).indexOf(word);
+    if (newIndex > -1) {
+      count += 1;
+      index += newIndex;
+    }
+  }
+  return count < 0 ? 0 : (count + 1);
+}
+
+function findLongestPhrasesFrecuency(text, numWords = 4) {
+  const words = text
+    .split(/\b/)
+    .map(tokenize)
+    .filter(excludeWhitespace);
+    // .filter(excludedWords);
+    // .filter(excludeByLength);
+
+  // console.log({words})
+
+  const joinedWords = words.join(' ');
+
+  const repeated = findLongestRepeatedPhrases(words, numWords);
+  for (const [phrase] of repeated.entries()) {
+    const count = indexOfAll(joinedWords, phrase);
+    repeated.set(phrase, count);
+  }
+  return repeated;
+}
+
+function findLongestRepeatedPhrases(words, numWords = 3) {
+  const phrases = new Map();
+
+  // console.log({words});
+
+  for (let index = 0; index < words.length; index++) {
+    let longest = '';
+    let distance = 0;
+    const joinedWords = words.slice(index).join(' ');
+    // console.log({joinedWords});
+
+    for (let grouping = numWords; grouping < words.length; grouping++) {
+      const phrase = words.slice(index, index + grouping).join(' ').trim();
+      // console.log({ phrase, grouping, index, slice: (index + phrase.length), found: index + phrase.length + joinedWords.slice(index + phrase.length).indexOf(phrase) });
+
+      if (joinedWords.slice(phrase.length).indexOf(phrase) > -1) {
+        longest = phrase;
+        distance = grouping;
+      } else {
+        break;
+      }
+    }
+
+    const len = longest.length;
+    if (len) {
+      phrases.set(longest, 2);
+      index += distance;
+    }
+
+    // console.log('index', index);
+  }
+
+  return phrases;
+}
+
+
 async function main() {
   // read text file
-  const text = await fs.readFile('data/repeated.txt', 'utf8');
+  // const text = await fs.readFile('data/repeated.txt', 'utf8');
   // const text = await fs.readFile('data/The-Science-of-Getting-Rich-summary3.txt', 'utf8');
   // const text = await fs.readFile('data/The-Science-of-Getting-Rich-summary2.txt', 'utf8');
   // const text = await fs.readFile('data/The-Science-of-Getting-Rich-summary1.txt', 'utf8');
-  // const text = await fs.readFile('data/The-Science-of-Getting-Rich-summary.txt', 'utf8');
+  const text = await fs.readFile('data/The-Science-of-Getting-Rich-summary.txt', 'utf8');
   // const text = await fs.readFile('data/The-Science-of-Getting-Rich.txt', 'utf8');
+
   // get the most repeated words
   const words = getMostRepeatedWords(text);
 
   // console.log({text, words});
-  const sortedWords = topKeys(words);
-  console.log({sortedWords});
+  const sortedWord1 = topKeys(words);
+  console.log({sortedWords: sortedWord1});
 
   // get 2-word phrases
   const phrases = getPhrases(text);
-  const sortedPhrases = topKeys(phrases);
-  console.log({sortedPhrases});
+  const sortedWord2 = topKeys(phrases);
+  console.log({sortedPhrases: sortedWord2});
 
   // get 3-word phrases
   const phrases3 = getNPhrases(text, 2);
-  const sortedPhrases3 = topKeys(phrases3);
-  console.log({sortedPhrases3});
+  const sortedWord3 = topKeys(phrases3);
+  console.log({sortedPhrases3: sortedWord3});
 
   // longest repeated phrases
   // Find the longest repeated phrases (could be multiple sentenses).
-  const phasesn = findLongestPhrases(text);
-  const sortedPhrasesN = topKeys(phasesn);
-  console.log({sortedPhrasesN});
+  const phasesn = findLongestPhrasesFrecuency(text);
+  const sortedWordN = topKeys(phasesn, 40);
+  console.log({sortedPhrasesN: sortedWordN});
 }
 
-main();
+// main();
+
+module.exports = {
+  indexOfAll,
+  findLongestPhrasesFrecuency,
+  findLongestRepeatedPhrases,
+};
