@@ -1,4 +1,4 @@
-const MIN_WORD_LENGTH = 2;
+const MIN_WORD_LENGTH = 3;
 
 const EXCLUDED_WORDS = [
   // articles
@@ -12,7 +12,7 @@ const EXCLUDED_WORDS = [
   'my', 'your', 'his',
   // others
   'all', 'that', 'not', 'are', 'which', 'with', 'this', 'get', 'who', 'more', 'what', 'must',
-  'there', 'from', 'upon', 'every', 'into', 'one',
+  'there', 'from', 'upon', 'every', 'into', 'one', 'to', 'of', 'in', 'by', 'if',
 ];
 const EXCLUDED_WORDS_MAP = EXCLUDED_WORDS.reduce((map, word) => (map[word] = true, map), {});
 
@@ -21,7 +21,7 @@ function tokenize(word) {
 }
 
 function hasOnlyWhitespace(word) {
-  return !word || !word.trim().length;
+  return !word || !word.trim().length || /\W/.test(word);
 }
 
 function isTooShort(word) {
@@ -80,7 +80,7 @@ function getNPhrases(text, grouping = 1) {
     .split(/\b/)
     .map(tokenize)
     // .filter(isExcludedWord);
-    .filter(isTooShort);
+    .filter(not(isTooShort));
 
   for (let index = grouping; index < words.length; index++) {
     const phrase = words.slice(index - grouping, index + 1).join(' ').trim();
@@ -139,7 +139,7 @@ function findLongestPhrasesOld(text) {
 function indexOfAll(text, word) {
   let count = -1;
   for (let index = 0; index < text.length; index++) {
-    const newIndex = text.slice(index).indexOf(word);
+    const newIndex = text.slice(index).indexOf(word); // bottleneck
     if (newIndex > -1) {
       count += 1;
       index += newIndex;
@@ -162,16 +162,20 @@ function findLongestPhrasesFrecuency(text, numWords = 4) {
 
   const repeated = findLongestRepeatedPhrases(words, numWords);
   for (const [phrase] of repeated.entries()) {
-    const count = indexOfAll(joinedWords, phrase);
+    const count = indexOfAll(joinedWords, phrase); // bottleneck
     repeated.set(phrase, count);
   }
   return repeated;
 }
 
+/**
+ * Find duplicated phrases in a text.
+ * Longest common substring
+ * @param {*} words
+ * @param {*} numWords
+ */
 function findLongestRepeatedPhrases(words, numWords = 3) {
   const phrases = new Map();
-
-  // console.log({words});
 
   for (let index = 0; index < words.length; index++) {
     let longest = '';
@@ -196,8 +200,6 @@ function findLongestRepeatedPhrases(words, numWords = 3) {
       phrases.set(longest, 2);
       index += distance;
     }
-
-    // console.log('index', index);
   }
 
   return phrases;

@@ -102,6 +102,19 @@ describe('summarizer', () => {
       ]));
     });
 
+    it('should find the longest phrases frecuency and exclude punctuation', () => {
+      expect(findLongestPhrasesFrecuency('aaa bbb. cc aaa bbb aaa bbb.', 2)).toEqual(new Map([
+        ['aaa bbb', 3],
+      ]));
+    });
+
+    it('should find the longest phrases frecuency and not exclude numbers', () => {
+      expect(findLongestPhrasesFrecuency('aaa bbb 1 cc aaa bbb aaa bbb 1', 2)).toEqual(new Map([
+        ['aaa bbb 1', 2],
+        ['aaa bbb', 3],
+      ]));
+    });
+
     it('should not find the longest phrases', () => {
       expect(findLongestPhrasesFrecuency('aaa bbbx cc aaa bbb', 2)).toEqual(new Map());
     });
