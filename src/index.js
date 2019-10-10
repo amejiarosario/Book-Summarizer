@@ -1,6 +1,5 @@
-const fs = require('fs').promises;
+const MIN_WORD_LENGTH = 2;
 
-MIN_WORD_LENGTH = 2;
 const EXCLUDED_WORDS = [
   // articles
   'a', 'an', 'the',
@@ -21,33 +20,35 @@ function tokenize(word) {
   return word.toLowerCase().trim();
 }
 
-function excludeWhitespace(word) {
-  return word && word.trim().length > 0;
+function hasOnlyWhitespace(word) {
+  return !word || !word.trim().length;
 }
 
-function excludeByLength(word) {
-  return excludeWhitespace(word) > MIN_WORD_LENGTH;
+function isTooShort(word) {
+  return hasOnlyWhitespace(word) || word.length < MIN_WORD_LENGTH;
 }
 
-function excludedWords(word) {
-  return excludeByLength(word) && !EXCLUDED_WORDS_MAP[word];
+function isExcludedWord(word) {
+  return isTooShort(word) || !!EXCLUDED_WORDS_MAP[word];
 }
 
-function getMostRepeatedWords(text) {
-  return text
-    .split(/\b/)
+function not(cb) {
+  return arg => !cb(arg);
+}
+
+function getWordFrecuency(text) {
+  return text.split(/\b/)
     .map(tokenize)
-    .filter(excludedWords)
+    .filter(not(isExcludedWord))
     .reduce((map, token) => {
+      if (map.has(token)) {
+        map.set(token, 1 + map.get(token));
+      } else {
+        map.set(token, 1);
+      }
 
-    if (map.has(token)) {
-      map.set(token, 1 + map.get(token));
-    } else {
-      map.set(token, 1);
-    }
-
-    return map;
-  }, new Map());
+      return map;
+    }, new Map());
 }
 
 function getPhrases(text, grouping = 1) {
@@ -55,8 +56,8 @@ function getPhrases(text, grouping = 1) {
   const words = text
     .split(/\b/)
     .map(tokenize)
-    .filter(excludedWords);
-    // .filter(excludeByLength);
+    .filter(not(isExcludedWord));
+    // .filter(isTooShort);
 
   for (let index = 1; index < words.length; index++) {
     const prev = words[index - 1];
@@ -78,8 +79,8 @@ function getNPhrases(text, grouping = 1) {
   const words = text
     .split(/\b/)
     .map(tokenize)
-    // .filter(excludedWords);
-    .filter(excludeByLength);
+    // .filter(isExcludedWord);
+    .filter(isTooShort);
 
   for (let index = grouping; index < words.length; index++) {
     const phrase = words.slice(index - grouping, index + 1).join(' ').trim();
@@ -108,8 +109,8 @@ function findLongestPhrasesOld(text) {
   const words = text
     .split(/\b/)
     .map(tokenize)
-    // .filter(excludedWords);
-    .filter(excludeByLength);
+    // .filter(isExcludedWord);
+    .filter(isTooShort);
 
   // console.log({words});
 
@@ -151,9 +152,9 @@ function findLongestPhrasesFrecuency(text, numWords = 4) {
   const words = text
     .split(/\b/)
     .map(tokenize)
-    .filter(excludeWhitespace);
-    // .filter(excludedWords);
-    // .filter(excludeByLength);
+    .filter(not(hasOnlyWhitespace));
+    // .filter(isExcludedWord);
+    // .filter(isTooShort);
 
   // console.log({words})
 
@@ -202,43 +203,14 @@ function findLongestRepeatedPhrases(words, numWords = 3) {
   return phrases;
 }
 
-
-async function main() {
-  // read text file
-  // const text = await fs.readFile('data/repeated.txt', 'utf8');
-  // const text = await fs.readFile('data/The-Science-of-Getting-Rich-summary3.txt', 'utf8');
-  // const text = await fs.readFile('data/The-Science-of-Getting-Rich-summary2.txt', 'utf8');
-  // const text = await fs.readFile('data/The-Science-of-Getting-Rich-summary1.txt', 'utf8');
-  const text = await fs.readFile('data/The-Science-of-Getting-Rich-summary.txt', 'utf8');
-  // const text = await fs.readFile('data/The-Science-of-Getting-Rich.txt', 'utf8');
-
-  // get the most repeated words
-  const words = getMostRepeatedWords(text);
-
-  // console.log({text, words});
-  const sortedWord1 = topKeys(words);
-  console.log({sortedWords: sortedWord1});
-
-  // get 2-word phrases
-  const phrases = getPhrases(text);
-  const sortedWord2 = topKeys(phrases);
-  console.log({sortedPhrases: sortedWord2});
-
-  // get 3-word phrases
-  const phrases3 = getNPhrases(text, 2);
-  const sortedWord3 = topKeys(phrases3);
-  console.log({sortedPhrases3: sortedWord3});
-
-  // longest repeated phrases
-  // Find the longest repeated phrases (could be multiple sentenses).
-  const phasesn = findLongestPhrasesFrecuency(text);
-  const sortedWordN = topKeys(phasesn, 40);
-  console.log({sortedPhrasesN: sortedWordN});
-}
-
-// main();
-
 module.exports = {
+  hasOnlyWhitespace,
+  isTooShort,
+  isExcludedWord,
+  getWordFrecuency,
+  topKeys,
+  getPhrases,
+  getNPhrases,
   indexOfAll,
   findLongestPhrasesFrecuency,
   findLongestRepeatedPhrases,

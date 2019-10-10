@@ -1,10 +1,61 @@
 const {
+  hasOnlyWhitespace,
+  isTooShort,
+  isExcludedWord,
+  getWordFrecuency,
+  topKeys,
+  getPhrases,
+  getNPhrases,
   indexOfAll,
   findLongestPhrasesFrecuency,
   findLongestRepeatedPhrases,
 } = require('./index');
 
 describe('summarizer', () => {
+  describe('hasOnlyWhitespace', () => {
+    it('hasOnlyWhitespace', () => {
+      expect(hasOnlyWhitespace('aaa')).toEqual(false);
+    });
+
+    it('hasOnlyWhitespace', () => {
+      expect(hasOnlyWhitespace('   ')).toEqual(true);
+    });
+  });
+
+  describe('isTooShort', () => {
+    it('isTooShort', () => {
+      expect(isTooShort('aaa')).toEqual(false);
+    });
+
+    it('isTooShort', () => {
+      expect(isTooShort('a')).toEqual(true);
+    });
+
+    it('isTooShort', () => {
+      expect(isTooShort('to')).toEqual(false);
+    });
+  });
+
+  describe('isExcludedWord', () => {
+    it('isExcludedWord', () => {
+      expect(isExcludedWord('aaaaa')).toEqual(false);
+    });
+
+    it('isExcludedWord', () => {
+      expect(isExcludedWord(' ')).toEqual(true);
+    });
+  });
+
+  describe('getWordFrecuency', () => {
+    it('should find repeated', () => {
+      expect(getWordFrecuency('aaa eee aaa kkk')).toEqual(new Map([
+        ['aaa', 2],
+        ['eee', 1],
+        ['kkk', 1],
+      ]));
+    });
+  });
+
   describe('indexOfAll', () => {
     it('should find a duplicate', () => {
       expect(indexOfAll('camara', 'cama')).toEqual(1);
