@@ -15,7 +15,8 @@ async function main() {
   // const text = await fs.readFile('data/The-Science-of-Getting-Rich-summary2.txt', 'utf8');
   // const text = await fs.readFile('data/The-Science-of-Getting-Rich-summary1.txt', 'utf8');
   // const text = await fs.readFile('data/The-Science-of-Getting-Rich-summary.txt', 'utf8');
-  const text = await fs.readFile('data/The-Science-of-Getting-Rich.txt', 'utf8');
+  // const text = await fs.readFile('data/The-Science-of-Getting-Rich.txt', 'utf8');
+  const text = await fs.readFile('data/cs-material.txt', 'utf8');
 
   // get the most repeated words
   const words = getWordFrecuency(text);
